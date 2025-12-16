@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}{{ store.store_name }} - NYCU Food Recommendation{% endblock %}
+
+{% block content %}
+<h2>{{ store.store_name }}</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('stores_list') }}" class="btn">返回列表</a>
+    <a href="{{ url_for('store_edit', store_id=store.store_id) }}" class="btn">編輯餐廳</a>
+</div>
+
+<h3>基本資訊</h3>
+<p><strong>位置：</strong>{{ store.location_name or '未設定' }}</p>
+<p><strong>分類：</strong>
+    {% if store_categories %}
+        {% for cat in store_categories %}{{ cat.category_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+    {% else %}
+        未設定
+    {% endif %}
+</p>
+
+{% if hours %}
+<h3>營業時間</h3>
+<table>
+    <thead>
+        <tr>
+            <th>星期</th>
+            <th>營業時間</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for hour in hours %}
+        <tr>
+            <td>
+                {% if hour.day_of_week == 1 %}週一
+                {% elif hour.day_of_week == 2 %}週二
+                {% elif hour.day_of_week == 3 %}週三
+                {% elif hour.day_of_week == 4 %}週四
+                {% elif hour.day_of_week == 5 %}週五
+                {% elif hour.day_of_week == 6 %}週六
+                {% elif hour.day_of_week == 7 %}週日
+                {% endif %}
+            </td>
+            <td>{{ hour.open_time.strftime('%H:%M') }} - {{ hour.close_time.strftime('%H:%M') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<h3>菜單 ({{ foods|length }} 項)</h3>
+
+<div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+    <h4>新增菜單項目</h4>
+    <form method="POST" action="{{ url_for('food_create') }}">
+        <input type="hidden" name="store_id" value="{{ store.store_id }}">
+        <div class="form-group">
+            <label>食物名稱：</label>
+            <input type="text" name="food_name" required>
+        </div>
+        <div class="form-group">
+            <label>價格：</label>
+            <input type="number" name="price" step="0.01" required>
+        </div>
+        <div class="form-group">
+            <label>卡路里（選填）：</label>
+            <input type="number" name="calories">
+        </div>
+        <button type="submit">新增</button>
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>食物名稱</th>
+            <th>價格</th>
+            <th>卡路里</th>
+            <th>平均評分</th>
+            <th>評論數</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for food in foods %}
+        <tr>
+            <td>{{ food.food_name }}</td>
+            <td>NT$ {{ food.price }}</td>
+            <td>{{ food.calories or '-' }}</td>
+            <td class="rating">{{ "%.1f"|format(food.avg_rating) }} ★</td>
+            <td>{{ food.review_count }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('food_delete', food_id=food.food_id) }}"
+                      style="display: inline;"
+                      onsubmit="return confirm('確定要刪除嗎？');">
+                    <button type="submit" class="btn btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" style="text-align: center;">尚無菜單項目</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3 style="margin-top: 30px;">評論 ({{ reviews|length }})</h3>
+
+<div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+    <h4>新增評論</h4>
+    <form method="POST" action="{{ url_for('review_create') }}">
+        <div class="form-group">
+            <label>選擇使用者：</label>
+            <select name="user_id" required>
+                <option value="">請選擇</option>
+                {% for user in users %}
+                    <option value="{{ user.user_id }}">{{ user.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>選擇食物：</label>
+            <select name="food_id" required>
+                <option value="">請選擇</option>
+                {% for food in foods %}
+                    <option value="{{ food.food_id }}">{{ food.food_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>評分 (1-5)：</label>
+            <input type="number" name="rating" min="1" max="5">
+        </div>
+        <div class="form-group">
+            <label>CP值 (1-5)：</label>
+            <input type="number" name="cp_value" min="1" max="5">
+        </div>
+        <div class="form-group">
+            <label>健康度 (1-5)：</label>
+            <input type="number" name="healthy" min="1" max="5">
+        </div>
+        <div class="form-group">
+            <label>飽足感 (1-5)：</label>
+            <input type="number" name="fullness" min="1" max="5">
+        </div>
+        <div class="form-group">
+            <label>評論內容：</label>
+            <textarea name="comment"></textarea>
+        </div>
+        <button type="submit">送出評論</button>
+    </form>
+</div>
+
+{% for review in reviews %}
+<div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px;">
+    <div style="margin-bottom: 10px;">
+        <strong>{{ review.user_name }}</strong> 評論 <strong>{{ review.food_name }}</strong>
+        <span style="float: right; color: #999;">{{ review.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+    </div>
+    <div style="margin-bottom: 10px;">
+        <span class="rating">評分: {{ review.rating or '-' }} ★</span> |
+        CP值: {{ review.cp_value or '-' }} |
+        健康度: {{ review.healthy or '-' }} |
+        飽足感: {{ review.fullness or '-' }}
+    </div>
+    {% if review.comment %}
+    <p style="margin-bottom: 10px;">{{ review.comment }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('review_delete', review_id=review.review_id) }}"
+          style="display: inline;"
+          onsubmit="return confirm('確定要刪除此評論嗎？');">
+        <button type="submit" class="btn btn-sm btn-danger">刪除</button>
+    </form>
+</div>
+{% else %}
+<p>尚無評論</p>
+{% endfor %}
+
+{% endblock %}

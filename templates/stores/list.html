@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}餐廳列表 - NYCU Food Recommendation{% endblock %}
+
+{% block content %}
+<h2>餐廳列表</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('store_create') }}" class="btn">新增餐廳</a>
+</div>
+
+<div class="filter-box">
+    <h3 style="margin-bottom: 15px;">搜尋與篩選</h3>
+    <form method="GET" action="{{ url_for('stores_list') }}">
+        <div class="form-group">
+            <label>餐廳名稱：</label>
+            <input type="text" name="search" value="{{ search_query }}" placeholder="搜尋餐廳">
+        </div>
+
+        <div class="form-group">
+            <label>位置：</label>
+            <select name="location_id">
+                <option value="">全部</option>
+                {% for location in locations %}
+                    <option value="{{ location.location_id }}"
+                            {% if selected_location == location.location_id|string %}selected{% endif %}>
+                        {{ location.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>分類：</label>
+            <select name="category_id">
+                <option value="">全部</option>
+                {% for category in categories %}
+                    <option value="{{ category.category_id }}"
+                            {% if selected_category == category.category_id|string %}selected{% endif %}>
+                        {{ category.category_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <button type="submit">搜尋</button>
+            <a href="{{ url_for('stores_list') }}" class="btn" style="margin-left: 10px;">清除篩選</a>
+        </div>
+    </form>
+</div>
+
+<p>找到 {{ stores|length }} 間餐廳</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>餐廳名稱</th>
+            <th>位置</th>
+            <th>平均評分</th>
+            <th>菜單項目數</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for store in stores %}
+        <tr>
+            <td><a href="{{ url_for('store_detail', store_id=store.store_id) }}">{{ store.store_name }}</a></td>
+            <td>{{ store.location_name or '-' }}</td>
+            <td class="rating">{{ "%.1f"|format(store.avg_rating) }} ★</td>
+            <td>{{ store.food_count }}</td>
+            <td>
+                <a href="{{ url_for('store_detail', store_id=store.store_id) }}" class="btn btn-sm">詳細</a>
+                <a href="{{ url_for('store_edit', store_id=store.store_id) }}" class="btn btn-sm">編輯</a>
+                <form method="POST" action="{{ url_for('store_delete', store_id=store.store_id) }}"
+                      style="display: inline;"
+                      onsubmit="return confirm('確定要刪除此餐廳嗎？');">
+                    <button type="submit" class="btn btn-sm btn-danger">刪除</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" style="text-align: center;">沒有找到餐廳</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

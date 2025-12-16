@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}頁面不存在{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>404 - 找不到頁面</h2>
+  <p>抱歉，您請求的頁面不存在。請確認網址或回首頁。</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">回首頁</a>
+</div>
+{% endblock %}

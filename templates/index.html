@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}首頁 - NYCU Food Recommendation{% endblock %}
+
+{% block content %}
+<h2>歡迎使用 NYCU 美食推薦系統</h2>
+
+<p>這是一個專為交大師生設計的美食推薦平台，幫助您快速找到校園周邊的美食選擇。</p>
+
+<h3>功能介紹</h3>
+<ul style="line-height: 2;">
+    <li><strong>餐廳列表：</strong>瀏覽所有餐廳，支援搜尋和篩選</li>
+    <li><strong>食物列表：</strong>查看所有菜單項目，依價格、餐廳篩選</li>
+    <li><strong>評論系統：</strong>查看其他使用者的評價</li>
+    <li><strong>資料匯入：</strong>批次上傳 CSV 檔案新增食物資料</li>
+</ul>
+
+<h3>快速開始</h3>
+<div style="margin-top: 20px;">
+    <a href="{{ url_for('stores_list') }}" class="btn">瀏覽餐廳</a>
+    <a href="{{ url_for('foods_list') }}" class="btn" style="margin-left: 10px;">瀏覽食物</a>
+    <a href="{{ url_for('store_create') }}" class="btn" style="margin-left: 10px;">新增餐廳</a>
+</div>
+
+<h3 style="margin-top: 30px;">系統資訊</h3>
+<p>資料庫: PostgreSQL | 框架: Flask | 查詢語言: SQL</p>
+{% endblock %}

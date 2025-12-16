@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}食物列表 - NYCU Food Recommendation{% endblock %}
+
+{% block content %}
+<h2>食物列表</h2>
+
+<div class="filter-box">
+    <h3 style="margin-bottom: 15px;">搜尋與篩選</h3>
+    <form method="GET" action="{{ url_for('foods_list') }}">
+        <div class="form-group">
+            <label>食物名稱：</label>
+            <input type="text" name="search" value="{{ search_query }}" placeholder="搜尋食物">
+        </div>
+
+        <div class="form-group">
+            <label>餐廳：</label>
+            <select name="store_id">
+                <option value="">全部</option>
+                {% for store in stores %}
+                    <option value="{{ store.store_id }}"
+                            {% if selected_store == store.store_id|string %}selected{% endif %}>
+                        {{ store.store_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>最低價格：</label>
+            <input type="number" name="min_price" value="{{ min_price }}" step="0.01" placeholder="0">
+        </div>
+
+        <div class="form-group">
+            <label>最高價格：</label>
+            <input type="number" name="max_price" value="{{ max_price }}" step="0.01" placeholder="1000">
+        </div>
+
+        <div class="form-group">
+            <button type="submit">搜尋</button>
+            <a href="{{ url_for('foods_list') }}" class="btn" style="margin-left: 10px;">清除篩選</a>
+        </div>
+    </form>
+</div>
+
+<p>找到 {{ foods|length }} 項食物</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>食物名稱</th>
+            <th>餐廳</th>
+            <th>價格</th>
+            <th>卡路里</th>
+            <th>平均評分</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for food in foods %}
+        <tr>
+            <td>{{ food.food_name }}</td>
+            <td>
+                <a href="{{ url_for('store_detail', store_id=food.store_id) }}">
+                    {{ food.store_name }}
+                </a>
+            </td>
+            <td>NT$ {{ food.price }}</td>
+            <td>{{ food.calories or '-' }}</td>
+            <td class="rating">{{ "%.1f"|format(food.avg_rating) }} ★</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" style="text-align: center;">沒有找到食物</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
