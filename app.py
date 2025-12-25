@@ -26,6 +26,7 @@ def stores_list():
     search_query = request.args.get('search', '').strip()
     location_id = request.args.get('location_id', '').strip()
     category_id = request.args.get('category_id', '').strip()
+    sort_by = request.args.get('sort_by', 'name').strip()
 
     # Base SQL query
     sql = """
@@ -58,8 +59,20 @@ def stores_list():
 
     sql += """
         GROUP BY s.store_id, s.store_name, l.name
-        ORDER BY s.store_name
     """
+    # Apply sorting
+    if sort_by == 'name':
+        sql += " ORDER BY s.store_name ASC"
+    elif sort_by == 'rating_desc':
+        sql += " ORDER BY avg_rating DESC"
+    elif sort_by == 'rating_asc':
+        sql += " ORDER BY avg_rating ASC"
+    elif sort_by == 'food_count_desc':
+        sql += " ORDER BY food_count DESC"
+    elif sort_by == 'food_count_asc':
+        sql += " ORDER BY food_count ASC"
+    else:
+        sql += " ORDER BY s.store_id ASC"    
 
     stores = execute_query(sql, tuple(params) if params else None)
 
@@ -73,7 +86,8 @@ def stores_list():
                          categories=categories,
                          search_query=search_query,
                          selected_location=location_id,
-                         selected_category=category_id)
+                         selected_category=category_id,
+                         sort_by=sort_by)
 
 @app.route('/stores/<int:store_id>')
 def store_detail(store_id):
@@ -255,6 +269,7 @@ def foods_list():
         GROUP BY f.food_id, s.store_name
     """
 
+
     if sort_by == 'price_asc':
         sql += " ORDER BY f.price ASC"
     elif sort_by == 'price_desc':
@@ -264,7 +279,7 @@ def foods_list():
     elif sort_by == 'rating_asc':
         sql += " ORDER BY avg_rating ASC"
     else:
-        sql += " ORDER BY f.food_id ASC"
+        sql += " ORDER BY f.food_name ASC"
 
     foods = execute_query(sql, tuple(params) if params else None)
     stores = execute_query("SELECT * FROM stores ORDER BY store_name")

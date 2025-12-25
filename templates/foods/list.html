@@ -42,7 +42,7 @@
         <div class="form-group">
             <label>排序依據：</label>
             <select name="sort_by">
-                <option value="id"{% if sort_by == 'id' %}selected{% endif %}>無</option>
+                <option value="name"{% if sort_by == 'name' %}selected{% endif %}>名稱</option>
                 <option value="price_asc" {% if sort_by == "price_asc" %}selected{% endif %}>價格：由低到高</option>
                 <option value="price_desc" {% if sort_by == "price_desc" %}selected{% endif %}>價格：由高到低</option>
                 <option value="rating_desc" {% if sort_by == "rating_desc" %}selected{% endif %}>平均評分：由高到低</option>

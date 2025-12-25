@@ -44,6 +44,17 @@
         </div>
 
         <div class="form-group">
+            <label>排序依據：</label>
+            <select name="sort_by">
+                <option value="name"{% if sort_by == 'name' %}selected{% endif %}>名稱</option>
+                <option value="rating_desc" {% if sort_by == "rating_desc" %}selected{% endif %}>平均評分：由高到低</option>
+                <option value="rating_asc" {% if sort_by == "rating_asc" %}selected{% endif %}>平均評分：由低到高</option>
+                <option value="food_count_desc" {% if sort_by == "food_count_desc" %}selected{% endif %}>菜單項目數：由多到少</option>
+                <option value="food_count_asc" {% if sort_by == "food_count_asc" %}selected{% endif %}>菜單項目數：由少到多</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <button type="submit">搜尋</button>
             <a href="{{ url_for('stores_list') }}" class="btn" style="margin-left: 10px;">清除篩選</a>
         </div>
