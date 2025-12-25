@@ -222,6 +222,7 @@ def foods_list():
     store_id = request.args.get('store_id', '').strip()
     min_price = request.args.get('min_price', '').strip()
     max_price = request.args.get('max_price', '').strip()
+    sort_by = request.args.get('sort_by', 'id').strip()
 
     sql = """
         SELECT f.*, s.store_name,
@@ -248,11 +249,22 @@ def foods_list():
     if max_price:
         sql += " AND f.price <= %s"
         params.append(max_price)
-
+        
+    
     sql += """
         GROUP BY f.food_id, s.store_name
-        ORDER BY f.food_name
     """
+
+    if sort_by == 'price_asc':
+        sql += " ORDER BY f.price ASC"
+    elif sort_by == 'price_desc':
+        sql += " ORDER BY f.price DESC"
+    elif sort_by == 'rating_desc':
+        sql += " ORDER BY avg_rating DESC"
+    elif sort_by == 'rating_asc':
+        sql += " ORDER BY avg_rating ASC"
+    else:
+        sql += " ORDER BY f.food_id ASC"
 
     foods = execute_query(sql, tuple(params) if params else None)
     stores = execute_query("SELECT * FROM stores ORDER BY store_name")
@@ -263,7 +275,8 @@ def foods_list():
                          search_query=search_query,
                          selected_store=store_id,
                          min_price=min_price,
-                         max_price=max_price)
+                         max_price=max_price,
+                         sort_by=sort_by)
 
 @app.route('/foods/create', methods=['POST'])
 def food_create():
