@@ -57,9 +57,16 @@
 
 
         <div class="form-group">
-            <a href="{{ url_for('export_foods_csv') }}">
-                <button type="button">匯出CSV</button>
+            <a href="{{ url_for('export_foods_csv',
+                     search=search_query,
+                     store_id=selected_store,
+                     min_price=min_price,
+                     max_price=max_price,
+                     sort_by=sort_by) }}"
+                class="btn btn-primary">
+                匯出搜尋結果
             </a>
+
         </div>
 
 

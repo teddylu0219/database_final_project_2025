@@ -337,6 +337,76 @@ def food_delete(food_id):
 
     return redirect(request.referrer or url_for('foods_list'))
 
+
+@app.route('/reviews/<int:review_id>/delete', methods=['POST'])
+def review_delete(review_id):
+    """Delete a review"""
+    try:
+        execute_query("DELETE FROM reviews WHERE review_id = %s", (review_id,), fetch=False)
+        flash('Review deleted successfully')
+    except Exception as e:
+        flash(f'Error deleting review: {str(e)}')
+
+    return redirect(request.referrer or url_for('index'))
+
+# ============ ERROR HANDLERS ============
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
+
+
+@app.route('/foods/export')
+def export_foods_csv():
+    search = request.args.get('search', '').strip()
+    store_id = request.args.get('store_id', '').strip()
+    min_price = request.args.get('min_price', '').strip()
+    max_price = request.args.get('max_price', '').strip()
+    sort_by = request.args.get('sort_by', 'food_id').strip()
+
+    sql = "SELECT f.*, s.store_name FROM foods f JOIN stores s ON f.store_id = s.store_id WHERE 1=1"
+    params = []
+
+    if search:
+        sql += " AND f.food_name ILIKE %s"
+        params.append(f"%{search}%")
+    if store_id:
+        sql += " AND f.store_id = %s"
+        params.append(store_id)
+    if min_price:
+        sql += " AND f.price >= %s"
+        params.append(min_price)
+    if max_price:
+        sql += " AND f.price <= %s"
+        params.append(max_price)
+
+    if sort_by in ['food_name', 'price', 'calories']:
+        sql += f" ORDER BY {sort_by}"
+    else:
+        sql += " ORDER BY food_id"
+
+    rows = execute_query(sql, tuple(params) if params else None)
+
+    import io, csv
+    output = io.StringIO()
+    output.write('\ufeff')  
+    writer = csv.writer(output)
+    writer.writerow(['ID', '食物名稱', '餐廳', '價格', '卡路里'])
+    for row in rows:
+        writer.writerow([row['food_id'], row['food_name'], row['store_name'], row['price'], row['calories']])
+
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={"Content-Disposition": "attachment; filename=foods.csv"}
+    )
+
+
 # ============ REVIEWS CRUD ============
 
 @app.route('/reviews/create', methods=['POST'])
@@ -374,66 +444,6 @@ def review_create():
 
     return redirect(request.referrer or url_for('index'))
 
-@app.route('/reviews/<int:review_id>/delete', methods=['POST'])
-def review_delete(review_id):
-    """Delete a review"""
-    try:
-        execute_query("DELETE FROM reviews WHERE review_id = %s", (review_id,), fetch=False)
-        flash('Review deleted successfully')
-    except Exception as e:
-        flash(f'Error deleting review: {str(e)}')
-
-    return redirect(request.referrer or url_for('index'))
-
-# ============ ERROR HANDLERS ============
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('500.html'), 500
-
-
-from flask import Response
-import csv
-import io
-from db import execute_query 
-
-@app.route('/foods/export')
-def export_foods_csv():
-
-    rows = execute_query("""
-        SELECT food_id, food_name, price, calories, store_id
-        FROM foods
-        ORDER BY food_id
-    """)
-
-
-    output = io.StringIO()
-    output.write('\ufeff') 
-
-    writer = csv.writer(output)
-    writer.writerow(['ID', 'Name', 'Price', 'Calories', 'Store ID'])
-    for row in rows:
-
-        writer.writerow([
-            row['food_id'],
-            row['food_name'],
-            row['price'],
-            row['calories'],
-            row['store_id']
-        ])
-
-
-    response = Response(
-        output.getvalue(),
-        mimetype='text/csv; charset=utf-8'
-    )
-    response.headers['Content-Disposition'] = 'attachment; filename=foods.csv'
-
-    return response
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
