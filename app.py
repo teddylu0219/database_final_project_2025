@@ -395,5 +395,50 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('500.html'), 500
 
+
+from flask import Response
+import csv
+import io
+from db import execute_query 
+
+@app.route('/foods/export')
+def export_foods_csv():
+
+    rows = execute_query("""
+        SELECT food_id, food_name, price, calories, store_id
+        FROM foods
+        ORDER BY food_id
+    """)
+
+
+    output = io.StringIO()
+    output.write('\ufeff') 
+
+    writer = csv.writer(output)
+    writer.writerow(['ID', 'Name', 'Price', 'Calories', 'Store ID'])
+    for row in rows:
+
+        writer.writerow([
+            row['food_id'],
+            row['food_name'],
+            row['price'],
+            row['calories'],
+            row['store_id']
+        ])
+
+
+    response = Response(
+        output.getvalue(),
+        mimetype='text/csv; charset=utf-8'
+    )
+    response.headers['Content-Disposition'] = 'attachment; filename=foods.csv'
+
+    return response
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+
+
+

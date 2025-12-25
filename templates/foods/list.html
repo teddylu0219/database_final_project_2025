@@ -5,6 +5,9 @@
 {% block content %}
 <h2>食物列表</h2>
 
+
+
+
 <div class="filter-box">
     <h3 style="margin-bottom: 15px;">搜尋與篩選</h3>
     <form method="GET" action="{{ url_for('foods_list') }}">
@@ -51,6 +54,18 @@
             <button type="submit">搜尋</button>
             <a href="{{ url_for('foods_list') }}" class="btn" style="margin-left: 10px;">清除篩選</a>
         </div>
+
+
+        <div class="form-group">
+            <a href="{{ url_for('export_foods_csv') }}">
+                <button type="button">匯出CSV</button>
+            </a>
+        </div>
+
+
+         
+
+
     </form>
 </div>
 
