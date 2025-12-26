@@ -226,6 +226,61 @@ def store_delete(store_id):
 
     return redirect(url_for('stores_list'))
 
+@app.route('/stores/export')
+def export_stores_csv():
+    search = request.args.get('search', '').strip()
+    location_id = request.args.get('location_id', '').strip()
+    category_id = request.args.get('category_id', '').strip()
+    sort_by = request.args.get('sort_by', 'store_id').strip()
+
+    sql = """
+        SELECT DISTINCT s.store_id, s.store_name, l.name as location_name,
+               COALESCE(AVG(r.rating), 0) as avg_rating,
+               COUNT(DISTINCT f.food_id) as food_count
+        FROM stores s
+        LEFT JOIN locations l ON s.location_id = l.location_id
+        LEFT JOIN foods f ON s.store_id = f.store_id
+        LEFT JOIN reviews r ON f.food_id = r.food_id
+        LEFT JOIN store_categories sc ON s.store_id = sc.store_id
+        WHERE 1=1
+    """
+    params = []
+
+    if search:
+        sql += " AND s.store_name ILIKE %s"
+        params.append(f"%{search}%")
+    if location_id:
+        sql += " AND s.location_id = %s"
+        params.append(location_id)
+    if category_id:
+        sql += " AND sc.category_id = %s"
+        params.append(category_id)
+
+    sql += " GROUP BY s.store_id, s.store_name, l.name"
+
+    if sort_by in ['store_name', 'avg_rating', 'food_count']:
+        sql += f" ORDER BY {sort_by}"
+    else:
+        sql += " ORDER BY s.store_id"
+
+    rows = execute_query(sql, tuple(params) if params else None)
+
+    import io, csv
+    output = io.StringIO()
+    output.write('\ufeff')  
+    writer = csv.writer(output)
+    writer.writerow(['ID', '餐廳名稱', '位置', '平均評分', '菜單項目數'])
+    for row in rows:
+        writer.writerow([row['store_id'], row['store_name'], row['location_name'], row['avg_rating'], row['food_count']])
+
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv; charset=utf-8',
+        headers={"Content-Disposition": "attachment; filename=stores.csv"}
+    )
+
+
 # ============ FOODS CRUD ============
 
 @app.route('/foods')
@@ -292,6 +347,59 @@ def foods_list():
                          min_price=min_price,
                          max_price=max_price,
                          sort_by=sort_by)
+
+import random
+from flask import jsonify
+
+@app.route('/stores/random')
+def random_store():
+    search = request.args.get('search', '').strip()
+    location_id = request.args.get('location_id', '').strip()
+    category_id = request.args.get('category_id', '').strip()
+
+    sql = """
+        SELECT DISTINCT s.store_id, s.store_name, l.name as location_name,
+               COALESCE(AVG(r.rating), 0) as avg_rating,
+               COUNT(DISTINCT f.food_id) as food_count
+        FROM stores s
+        LEFT JOIN locations l ON s.location_id = l.location_id
+        LEFT JOIN foods f ON s.store_id = f.store_id
+        LEFT JOIN reviews r ON f.food_id = r.food_id
+        LEFT JOIN store_categories sc ON s.store_id = sc.store_id
+        WHERE 1=1
+    """
+    params = []
+
+    if search:
+        sql += " AND s.store_name ILIKE %s"
+        params.append(f"%{search}%")
+    if location_id:
+        sql += " AND s.location_id = %s"
+        params.append(location_id)
+    if category_id:
+        sql += " AND sc.category_id = %s"
+        params.append(category_id)
+
+    sql += " GROUP BY s.store_id, s.store_name, l.name"
+
+    stores = execute_query(sql, tuple(params) if params else None)
+
+    if not stores:
+        return jsonify({'error': '沒有符合條件的餐廳'}), 404
+
+    chosen_store = random.choice(stores)
+
+    avg_rating = chosen_store['avg_rating']
+    avg_rating = round(avg_rating, 2) 
+    
+    return jsonify({
+        'store_id': chosen_store['store_id'],
+        'store_name': chosen_store['store_name'],
+        'location': chosen_store['location_name'],
+        'avg_rating': avg_rating,
+        'food_count': chosen_store['food_count']
+    })
+
 
 @app.route('/foods/create', methods=['POST'])
 def food_create():
@@ -364,17 +472,6 @@ def review_delete(review_id):
 
     return redirect(request.referrer or url_for('index'))
 
-# ============ ERROR HANDLERS ============
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('500.html'), 500
-
-
 @app.route('/foods/export')
 def export_foods_csv():
     search = request.args.get('search', '').strip()
@@ -420,6 +517,19 @@ def export_foods_csv():
         mimetype='text/csv; charset=utf-8',
         headers={"Content-Disposition": "attachment; filename=foods.csv"}
     )
+
+
+# ============ ERROR HANDLERS ============
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
+
+
 
 
 # ============ REVIEWS CRUD ============

@@ -58,6 +58,42 @@
             <button type="submit">搜尋</button>
             <a href="{{ url_for('stores_list') }}" class="btn" style="margin-left: 10px;">清除篩選</a>
         </div>
+
+        <div class="form-group">
+            <button id="random-store-btn" type="button">抽一家！</button>
+            <div id="random-store-result"></div>
+
+            <script>
+            document.getElementById('random-store-btn').addEventListener('click', function() {
+                const search = new URLSearchParams(window.location.search).get('search') || '';
+                const location_id = new URLSearchParams(window.location.search).get('location_id') || '';
+                const category_id = new URLSearchParams(window.location.search).get('category_id') || '';
+
+                fetch(`/stores/random?search=${search}&location_id=${location_id}&category_id=${category_id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById('random-store-result').innerText = data.error;
+                        } else {
+                            document.getElementById('random-store-result').innerText =
+                                `你抽到：${data.store_name}（位置：${data.location}，平均評分：${data.avg_rating}，菜單項目數：${data.food_count}）`;
+                        }
+                    });
+            });
+            </script>
+        </div>
+
+
+        <div class="form-group">
+            <a href="{{ url_for('export_stores_csv',
+                     search=search_query,
+                     location_id=selected_location,
+                     category_id=selected_category) }}"
+                class="btn btn-primary">
+                匯出搜尋結果
+            </a>
+
+        </div>
     </form>
 </div>
 
